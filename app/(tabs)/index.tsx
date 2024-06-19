@@ -10,9 +10,7 @@ import { useEffect, useState } from "react";
 
 export default function HomeScreen() {
   const [input, setInput] = useState("");
-  useEffect(() => {
-    console.log(input);
-  }, [input]);
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}

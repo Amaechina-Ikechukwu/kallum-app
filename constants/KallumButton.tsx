@@ -9,12 +9,15 @@ import {
   ViewStyle,
   Alert,
   TextStyle,
+  Dimensions,
 } from "react-native";
 import { Colors, accent } from "./Colors";
+const { width } = Dimensions.get("window");
 interface ButtonProps {
   text: string;
   styles?: StyleProp<ViewStyle>;
   textStyles?: StyleProp<TextStyle>;
+  onPress?: () => void;
 }
 export const KallumButton = (props: ButtonProps) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -33,7 +36,6 @@ export const KallumButton = (props: ButtonProps) => {
         useNativeDriver: false,
       }),
     ]).start();
-    Alert.alert("peace");
   };
 
   const handlePressOut = () => {
@@ -56,17 +58,25 @@ export const KallumButton = (props: ButtonProps) => {
   });
 
   return (
-    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={props.onPress}
+    >
       <Animated.View
         style={[
           styles.button,
-          { transform: [{ scale }], backgroundColor: accent },
+          {
+            transform: [{ scale }],
+            backgroundColor: accent,
+            width: width * 0.9,
+          },
           props.styles,
         ]}
       >
         <Text
           style={[
-            { color: Colors.light.background, fontWeight: 600, fontSize: 16 },
+            { color: Colors.light.background, fontWeight: 600, fontSize: 20 },
             props.textStyles,
           ]}
         >

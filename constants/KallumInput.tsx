@@ -7,9 +7,10 @@ import {
   StyleSheet,
   TextInputProps,
   useColorScheme,
+  Dimensions,
 } from "react-native";
 import { Colors, accent } from "./Colors";
-
+const { width } = Dimensions.get("window");
 interface KallumInputProps extends TextInputProps {
   label: string;
   value?: string;
@@ -93,14 +94,22 @@ const KallumInput: React.FC<KallumInputProps> = ({
       inputRange: [0, 1],
       outputRange: [accent, accent],
     }),
+    width: animatedIsFocused.interpolate({
+      inputRange: [0, 1],
+      outputRange: [width * 0.9, width * 0.9],
+    }),
     padding: animatedIsFocused.interpolate({
       inputRange: [0, 1],
       outputRange: [0, 0],
     }),
+    backgroundColor: animatedIsFocused.interpolate({
+      inputRange: [0, 1],
+      outputRange: [Colors[theme].tint, Colors[theme].tint],
+    }),
   };
 
   return (
-    <View style={[defaultStyles.container, styles]}>
+    <View style={[styles]}>
       <Animated.View style={viewStyle}>
         <Animated.Text style={labelStyle}>{label}</Animated.Text>
         <TextInput
@@ -123,10 +132,6 @@ const KallumInput: React.FC<KallumInputProps> = ({
 };
 
 const defaultStyles = StyleSheet.create({
-  container: {
-    paddingTop: 18,
-    marginVertical: 12,
-  },
   input: {
     height: 60,
     fontSize: 16,
