@@ -6,7 +6,7 @@ import {
   Easing,
   Dimensions,
 } from "react-native";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ThemedView } from "@/components/ThemedView";
 import { HelloWave } from "@/components/HelloWave";
 import KallumInput from "@/constants/KallumInput";
@@ -16,12 +16,72 @@ import { useShallow } from "zustand/react/shallow";
 import { ThemedText } from "@/components/ThemedText";
 import { Link, router } from "expo-router";
 import { accent } from "@/constants/Colors";
+import { AuthPost } from "@/apis/Post/AuthPost";
+import { useNotification } from "@/context/InAppNotificationContext";
+import { useSession } from "@/context/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 export default function Index() {
+  const [inputValues, setInputValue] = useState({
+    userName: "",
+
+    passWord: "",
+  });
+  const { userName, passWord } = inputValues;
   const [setActionStatus] = kallumStore(
-    useShallow((state) => [state.setActionStatus])
+    useShallow((state: any) => [state.setActionStatus])
   );
+
+  const { showNotification } = useNotification();
+  const { session, isLoading, signIn } = useSession();
+
+  const handleChange = (name: string, value: any) => {
+    setInputValue((prevValues: any) => ({
+      ...prevValues,
+      [name]: value,
+    }));
+  };
+  const body = { userName, passWord };
+  const validateInputs = () => {
+    if (!userName || !passWord) {
+      setActionStatus("failed");
+      showNotification("All fields are required.");
+      return false;
+    }
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(email)) {
+    //   setActionStatus("failed");
+    //   showNotification("Please enter a valid email address.");
+    //   return false;
+    // }
+    // if (passWord !== confirmPassword) {
+    //   setActionStatus("failed");
+    //   showNotification("Passwords do not match.");
+    //   return false;
+    // }
+    return true;
+  };
+
+  const setUpAccount = async () => {
+    try {
+      if (validateInputs()) {
+        // Proceed with signup logic
+        setActionStatus("loading");
+        const result = await AuthPost("login", body);
+        setActionStatus("done");
+        signIn(result.token);
+        showNotification("Congratulations, Kallum is here to serve");
+        router.push("/(tabs)");
+      }
+    } catch (error) {
+      console.log(error);
+      setActionStatus("failed");
+      showNotification(
+        "Could not set up account at the moment. \n Please ensure your password contains a number and a character"
+      );
+    }
+  };
+
   const position1 = useRef(new Animated.Value(0)).current;
   const position2 = useRef(new Animated.Value(0)).current;
   const handlePress = () => {
@@ -69,12 +129,22 @@ export default function Index() {
             ]}
           >
             <ThemedView style={{ gap: 30 }}>
-              <KallumInput label="Enter Username or email" />
-              <KallumInput label="Password" />
+              <KallumInput
+                label="Enter full name"
+                value={userName}
+                setValue={(text) => handleChange("userName", text)}
+                keyboardType="name-phone-pad"
+              />
+              <KallumInput
+                label="Password"
+                value={passWord}
+                setValue={(text) => handleChange("passWord", text)}
+                secureTextEntry
+              />
 
               <KallumButton
                 text="Log in to your account"
-                onPress={handlePress}
+                onPress={setUpAccount}
               />
             </ThemedView>
           </Animated.View>

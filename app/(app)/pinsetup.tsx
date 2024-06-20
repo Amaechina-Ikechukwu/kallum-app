@@ -122,9 +122,6 @@ export default function PinSetup() {
   };
 
   const handleInput = (value: string | number | { name: string }) => {
-    // Add a type for value with name property
-    console.log(value);
-    // icon found, do something
     if (value == "12") {
       deleteSingle();
     } else if (value == "13") {

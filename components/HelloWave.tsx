@@ -8,18 +8,19 @@ import Animated, {
 } from "react-native-reanimated";
 
 export function HelloWave() {
-  const rotationAnimation = useSharedValue(0);
+  const bounceAnimation = useSharedValue(0);
 
-  rotationAnimation.value = withRepeat(
+  bounceAnimation.value = withRepeat(
     withSequence(
-      withTiming(25, { duration: 150 }),
+      withTiming(-10, { duration: 500 }),
       withTiming(0, { duration: 150 })
     ),
-    4 // Run the animation 4 times
+    4, // Run the animation 4 times
+    true // Reverse animation on repeat
   );
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotationAnimation.value}deg` }],
+    transform: [{ translateY: bounceAnimation.value }],
   }));
 
   return (

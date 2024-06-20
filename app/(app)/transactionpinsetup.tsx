@@ -83,7 +83,7 @@ const CircleComponent = (props: {
   );
 };
 
-export default function PinSetup() {
+export default function TransactionPinSetup() {
   const [setActionStatus, setRetryFunction] = kallumStore(
     useShallow((state) => [state.setActionStatus, state.setRetryFunction])
   );
@@ -98,15 +98,27 @@ export default function PinSetup() {
   const deleteSingle = () => {
     setPin((prevPin) => ({
       ...prevPin,
-      firstPin: prevPin.firstPin.substring(0, prevPin.firstPin.length - 1),
+      [secondStage ? "secondPin" : "firstPin"]: prevPin[
+        secondStage ? "secondPin" : "firstPin"
+      ].substring(
+        0,
+        prevPin[secondStage ? "secondPin" : "firstPin"].length - 1
+      ),
     }));
   };
 
   const deleteAll = () => {
-    setPin((prevPin) => ({
-      ...prevPin,
-      firstPin: "",
-    }));
+    if (secondStage) {
+      setPin((prevPin) => ({
+        ...prevPin,
+        secondPin: "",
+      }));
+    } else {
+      setPin((prevPin) => ({
+        ...prevPin,
+        firstPin: "",
+      }));
+    }
   };
 
   const handleInput = (value: string | number | { name: string }) => {
@@ -174,29 +186,26 @@ export default function PinSetup() {
   );
 
   useEffect(() => {
-    if (pin.firstPin.length > 5) {
-      setActionStatus("loading");
-      setActionStatus("done");
-      showNotification("Accepted...Redirecting...");
-      setTimeout(() => {
-        router.replace("/(tabs)");
-        setActionStatus(null);
-      }, 3000);
-      // if (pin.firstPin) {
-      //   setActionStatus("done");
-      //   showNotification("Accepted...Redirecting...");
-      //   setTimeout(() => {
-      //     router.replace("/(tabs)");
-      //     setActionStatus(null);
-      //   }, 5000);
-      // } else {
-      //   setActionStatus("failed");
-      //   showNotification("Pin does not match");
-      //   setRetryFunction(retryPin);
-      //   setSecondStage(false);
-      // }
+    if (pin.firstPin.length > 3) {
+      setSecondStage(true);
     }
-  }, [pin.firstPin]);
+    if (pin.secondPin.length > 3) {
+      setActionStatus("loading");
+      if (pin.firstPin === pin.secondPin) {
+        setActionStatus("done");
+        showNotification("Pin has been set");
+        setTimeout(() => {
+          router.replace("/(tabs)");
+          setActionStatus(null);
+        }, 5000);
+      } else {
+        setActionStatus("failed");
+        showNotification("Pin does not match");
+        setRetryFunction(retryPin);
+        setSecondStage(false);
+      }
+    }
+  }, [pin.firstPin, pin.secondPin]);
   const renderItem = ({ item }: { item: number }) => (
     <View style={{ padding: 10 }}>
       <CircleComponent number={item} theme={theme} handleInput={handleInput} />
@@ -207,7 +216,9 @@ export default function PinSetup() {
     <ThemedView style={{ flex: 1 }}>
       <Animated.View style={[{ transform: [{ translateY: position3 }] }]}>
         <ThemedText style={{ letterSpacing: 5, fontSize: 30, lineHeight: 50 }}>
-          {"Enter your safe pin"}
+          {secondStage
+            ? "Re-enter pin to confirm"
+            : "Enter your transaction pin"}
         </ThemedText>
       </Animated.View>
       <Animated.View style={[{ transform: [{ translateY: position1 }] }]}>
@@ -220,7 +231,9 @@ export default function PinSetup() {
             width: "100%",
           }}
         >
-          <ThemedText style={{ letterSpacing: 20 }}>{pin.firstPin}</ThemedText>
+          <ThemedText style={{ letterSpacing: 20 }}>
+            {secondStage ? pin.secondPin : pin.firstPin}
+          </ThemedText>
         </ThemedView>
       </Animated.View>
 
