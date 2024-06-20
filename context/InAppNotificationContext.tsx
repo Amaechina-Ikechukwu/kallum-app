@@ -1,3 +1,12 @@
+import React, {
+  createContext,
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+  useContext,
+  ReactNode,
+} from "react";
 import {
   View,
   Text,
@@ -5,41 +14,43 @@ import {
   ActivityIndicator,
   useColorScheme,
 } from "react-native";
-import React, {
-  createContext,
-  useMemo,
-  useRef,
-  useState,
-  useEffect,
-} from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import kallumStore from "@/hooks/kallumstore";
-import { useShallow } from "zustand/react/shallow";
+import { shallow } from "zustand/shallow";
 import { Colors, accent } from "@/constants/Colors";
 import { ThemedView } from "@/components/ThemedView";
 import { AntDesign } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
 import { KallumButton } from "@/constants/KallumButton";
+import { useShallow } from "zustand/react/shallow";
 
-const InAppNotification: any = createContext(null);
+// Create the context with a proper type
+const InAppNotificationContext = createContext<{
+  showNotification: (message: string) => void;
+} | null>(null);
 
 interface NotificationResponse {
   text?: string;
   actionStatus: string | null;
+  retryFunction: (() => void) | null;
 }
 
-const Notifications = ({ text, actionStatus }: NotificationResponse) => {
+const Notifications = ({
+  text,
+  actionStatus,
+  retryFunction,
+}: NotificationResponse) => {
   const theme = useColorScheme() ?? "light";
 
-  if (actionStatus == "loading") {
+  if (actionStatus === "loading") {
     return (
       <ThemedView style={{ gap: 40, flex: 1 }}>
         <ActivityIndicator color={accent} size={"large"} />
       </ThemedView>
     );
   }
-  if (actionStatus == "done") {
+  if (actionStatus === "done") {
     return (
       <ThemedView style={{ gap: 40, flex: 1 }}>
         <AntDesign name="checkcircleo" size={40} color={Colors[theme].text} />
@@ -47,52 +58,72 @@ const Notifications = ({ text, actionStatus }: NotificationResponse) => {
       </ThemedView>
     );
   }
-  if (actionStatus == "failed") {
+  if (actionStatus === "failed") {
     return (
       <ThemedView style={{ gap: 40, flex: 1 }}>
         <Ionicons name="sad-outline" size={40} color={Colors[theme].text} />
         <ThemedText>{text || "Something went wrong"}</ThemedText>
-        <KallumButton text={"Retry"} />
+        <KallumButton text={"Retry"} onPress={retryFunction || (() => {})} />
       </ThemedView>
     );
   }
-  return null; // Ensuring a proper return type
+  return null;
 };
 
-export default function InAppNotificationContext({ children }: any) {
+export default function InAppNotificationProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [notificationText, setNotificationText] = useState("");
-  const [actionStatus, setActionStatus] = kallumStore(
-    useShallow((state: any) => [state.actionStatus, state.setActionStatus])
-  );
+  const [actionStatus, setActionStatus, retryFunction, setRetryFunction] =
+    kallumStore(
+      useShallow((state) => [
+        state.actionStatus,
+        state.setActionStatus,
+        state.retryFunction,
+        state.setRetryFunction,
+      ])
+    );
   const snapPoints = useMemo(() => ["25%"], []);
 
   const showNotification = (message: string) => {
     setNotificationText(message);
-    // Open the bottom sheet
     bottomSheetRef.current?.snapToIndex(0);
   };
+
   const handleClose = () => {
     setActionStatus(null);
-    return;
   };
+
   const handleSheetChanges = (index: number) => {
-    console.log("closing");
     if (index === -1) {
       handleClose();
     }
   };
+
+  const retryFFunction = () => {
+    if (retryFunction !== null && typeof retryFunction === "function") {
+      retryFunction();
+      setNotificationText("");
+      handleClose();
+    } else {
+      handleClose();
+      setNotificationText("");
+    }
+  };
+
   useEffect(() => {
-    console.log(actionStatus);
     if (actionStatus !== null) {
       bottomSheetRef.current?.snapToIndex(0);
     } else {
       bottomSheetRef.current?.close();
     }
-  }, [actionStatus, bottomSheetRef]);
+  }, [actionStatus]);
 
   return (
-    <InAppNotification.Provider value={{ showNotification }}>
+    <InAppNotificationContext.Provider value={{ showNotification }}>
       {children}
       {actionStatus !== null && (
         <BottomSheet
@@ -104,15 +135,26 @@ export default function InAppNotificationContext({ children }: any) {
         >
           <BottomSheetView style={styles.contentContainer}>
             <Notifications
+              retryFunction={retryFFunction}
               text={notificationText}
               actionStatus={actionStatus}
             />
           </BottomSheetView>
         </BottomSheet>
       )}
-    </InAppNotification.Provider>
+    </InAppNotificationContext.Provider>
   );
 }
+
+export const useNotification = () => {
+  const context = useContext(InAppNotificationContext);
+  if (!context) {
+    throw new Error(
+      "useNotification must be used within an InAppNotificationProvider"
+    );
+  }
+  return context;
+};
 
 const styles = StyleSheet.create({
   container: {
