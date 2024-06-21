@@ -2,20 +2,18 @@
 const BASE_URL = "https://4baf-105-113-33-121.ngrok-free.app"; // Replace with your API URL
 
 // Define the function to send a POST request with a bearer token using fetch
-export const GeneralPost = async (
+export const AuthGet = async (
   endpoint: string,
-  token: string,
-  requestBody: string[] | null // Adjust the type of requestBody according to your payload structure
+  token: string | null | undefined
 ) => {
   try {
-    const response = await fetch(`${BASE_URL}/${endpoint}`, {
-      method: "POST",
+    const response = await fetch(`${BASE_URL}/api/auth/${endpoint}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
         // Add any other headers if needed
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

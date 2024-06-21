@@ -19,6 +19,9 @@ import { useNotification } from "@/context/InAppNotificationContext";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
+import { AuthPost } from "@/apis/Authentication/AuthPost";
+import { AuthPatch } from "@/apis/Authentication/AuthPatch";
+import { useSession } from "@/context/AuthContext";
 const { width, height } = Dimensions.get("window");
 
 const CircleComponent = (props: {
@@ -94,7 +97,7 @@ export default function PinSetup() {
   });
   const { showNotification } = useNotification();
   const [secondStage, setSecondStage] = useState(Boolean);
-
+  const { session } = useSession();
   const deleteSingle = () => {
     setPin((prevPin) => ({
       ...prevPin,
@@ -127,18 +130,29 @@ export default function PinSetup() {
     } else if (value == "13") {
       deleteAll();
     } else {
-      const stringValue = value.toString(); // Convert value to string if it's a number
+      const stringValue = value.toString();
+
       if (pin.firstPin.length <= 5) {
-        setPin((prevPin) => ({
-          ...prevPin,
-          firstPin: prevPin.firstPin + stringValue,
-        }));
-      } else {
-        if (pin.secondPin.length <= 5) {
+        if (pin.firstPin.length == 0 && stringValue == "0") {
+          showNotification("Do not start pin with 0");
+          setActionStatus("failed");
+        } else {
           setPin((prevPin) => ({
             ...prevPin,
-            secondPin: prevPin.secondPin + stringValue,
+            firstPin: prevPin.firstPin + stringValue,
           }));
+        }
+      } else {
+        if (pin.secondPin.length <= 5) {
+          if (pin.secondPin.length == 0 && stringValue == "0") {
+            showNotification("Do not start pin with 0");
+            setActionStatus("failed");
+          } else {
+            setPin((prevPin) => ({
+              ...prevPin,
+              secondPin: prevPin.secondPin + stringValue,
+            }));
+          }
         }
       }
     }
@@ -150,7 +164,10 @@ export default function PinSetup() {
       secondPin: "",
     });
   };
-
+  const body = {
+    securePin: pin.firstPin,
+    transactionPin: " ",
+  };
   const position2 = useRef(new Animated.Value(0)).current;
   const position1 = useRef(new Animated.Value(0)).current;
   const position3 = useRef(new Animated.Value(0)).current;
@@ -184,26 +201,41 @@ export default function PinSetup() {
       return index <= 9 ? index : index - 1; // Counting from 1 to 9
     }
   );
-
-  useEffect(() => {
-    if (pin.firstPin.length > 5) {
-      setSecondStage(true);
+  const setSecurePin = async () => {
+    try {
+      await AuthPatch("kallumlock", session, body);
+      setActionStatus("done");
+      showNotification("Pin has been set");
+      setActionStatus(null);
+      router.push("/(tabs)");
+    } catch (error) {
+      setActionStatus("failed");
+      throw error;
     }
-    if (pin.secondPin.length > 5) {
-      setActionStatus("loading");
+  };
+  const monitorInput = async () => {
+    try {
       if (pin.firstPin === pin.secondPin) {
-        setActionStatus("done");
-        showNotification("Pin has been set");
-        setTimeout(() => {
-          router.replace("/(tabs)");
-          setActionStatus(null);
-        }, 5000);
+        await setSecurePin();
       } else {
         setActionStatus("failed");
         showNotification("Pin does not match");
         setRetryFunction(retryPin);
         setSecondStage(false);
       }
+    } catch (error) {
+      setActionStatus("failed");
+      showNotification("Could not setup pin at this time");
+      throw error;
+    }
+  };
+  useEffect(() => {
+    if (pin.firstPin.length > 5) {
+      setSecondStage(true);
+    }
+    if (pin.secondPin.length > 5 && pin.firstPin.length > 5) {
+      setActionStatus("loading");
+      monitorInput();
     }
   }, [pin.firstPin, pin.secondPin]);
   const renderItem = ({ item }: { item: number }) => (

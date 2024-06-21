@@ -16,7 +16,7 @@ import { useShallow } from "zustand/react/shallow";
 import { ThemedText } from "@/components/ThemedText";
 import { Link, router } from "expo-router";
 import { accent } from "@/constants/Colors";
-import { AuthPost } from "@/apis/Post/AuthPost";
+import { AuthPost } from "@/apis/Authentication/AuthPost";
 import { useNotification } from "@/context/InAppNotificationContext";
 import { useSession } from "@/context/AuthContext";
 
@@ -28,8 +28,8 @@ export default function Index() {
     passWord: "",
   });
   const { userName, passWord } = inputValues;
-  const [setActionStatus] = kallumStore(
-    useShallow((state: any) => [state.setActionStatus])
+  const [setActionStatus, setRetryFunction] = kallumStore(
+    useShallow((state: any) => [state.setActionStatus, state.setRetryFunction])
   );
 
   const { showNotification } = useNotification();
@@ -41,24 +41,14 @@ export default function Index() {
       [name]: value,
     }));
   };
-  const body = { userName, passWord };
+  const body = { userName: userName.trim(), passWord };
   const validateInputs = () => {
     if (!userName || !passWord) {
       setActionStatus("failed");
       showNotification("All fields are required.");
       return false;
     }
-    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // if (!emailRegex.test(email)) {
-    //   setActionStatus("failed");
-    //   showNotification("Please enter a valid email address.");
-    //   return false;
-    // }
-    // if (passWord !== confirmPassword) {
-    //   setActionStatus("failed");
-    //   showNotification("Passwords do not match.");
-    //   return false;
-    // }
+
     return true;
   };
 
@@ -71,10 +61,11 @@ export default function Index() {
         setActionStatus("done");
         signIn(result.token);
         showNotification("Congratulations, Kallum is here to serve");
+        setActionStatus(null);
         router.push("/(tabs)");
       }
     } catch (error) {
-      console.log(error);
+      setRetryFunction(setUpAccount);
       setActionStatus("failed");
       showNotification(
         "Could not set up account at the moment. \n Please ensure your password contains a number and a character"
@@ -84,16 +75,7 @@ export default function Index() {
 
   const position1 = useRef(new Animated.Value(0)).current;
   const position2 = useRef(new Animated.Value(0)).current;
-  const handlePress = () => {
-    router.push("/(app)/pinsecure");
-    // setActionStatus("loading");
-    // setTimeout(() => {
-    //   setActionStatus("done");
-    // }, 15000);
-    // setTimeout(() => {
-    //   setActionStatus("failed");
-    // }, 16000);
-  };
+
   useEffect(() => {
     // Define the animation
     Animated.timing(position1, {

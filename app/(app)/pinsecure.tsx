@@ -19,6 +19,9 @@ import { useNotification } from "@/context/InAppNotificationContext";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useSession } from "@/context/AuthContext";
+import { AuthPatch } from "@/apis/Authentication/AuthPatch";
+import { AuthPost } from "@/apis/Authentication/AuthPost";
 const { width, height } = Dimensions.get("window");
 
 const CircleComponent = (props: {
@@ -84,9 +87,14 @@ const CircleComponent = (props: {
 };
 
 export default function PinSetup() {
-  const [setActionStatus, setRetryFunction] = kallumStore(
-    useShallow((state) => [state.setActionStatus, state.setRetryFunction])
+  const [setActionStatus, setRetryFunction, setIsSecured] = kallumStore(
+    useShallow((state) => [
+      state.setActionStatus,
+      state.setRetryFunction,
+      state.setIsSecured,
+    ])
   );
+  const { session } = useSession();
   const theme = useColorScheme() ?? "light";
   const [pin, setPin] = useState({
     firstPin: "",
@@ -108,7 +116,40 @@ export default function PinSetup() {
       firstPin: "",
     }));
   };
+  const body = {
+    securePin: pin.firstPin,
+  };
+  const setSecurePin = async () => {
+    try {
+      setActionStatus("loading");
+      const result = await AuthPost("kallumsecure", body, session);
+      if (result == true) {
+        setIsSecured(true);
+        setActionStatus("done");
+        showNotification("Accepted...Redirecting...");
+        router.push("/(tabs)");
 
+        setActionStatus(null);
+      } else {
+        setActionStatus("failed");
+        showNotification("Pin is incorrect");
+        setRetryFunction(retryPin);
+      }
+    } catch (error) {
+      setActionStatus("failed");
+      throw error;
+    }
+  };
+  const monitorInput = async () => {
+    try {
+      await setSecurePin();
+    } catch (error) {
+      setActionStatus("failed");
+      showNotification("Could not verify pin at this time");
+      setRetryFunction(retryPin);
+      throw error;
+    }
+  };
   const handleInput = (value: string | number | { name: string }) => {
     if (value == "12") {
       deleteSingle();
@@ -121,13 +162,6 @@ export default function PinSetup() {
           ...prevPin,
           firstPin: prevPin.firstPin + stringValue,
         }));
-      } else {
-        if (pin.secondPin.length <= 5) {
-          setPin((prevPin) => ({
-            ...prevPin,
-            secondPin: prevPin.secondPin + stringValue,
-          }));
-        }
       }
     }
   };
@@ -176,25 +210,7 @@ export default function PinSetup() {
   useEffect(() => {
     if (pin.firstPin.length > 5) {
       setActionStatus("loading");
-      setActionStatus("done");
-      showNotification("Accepted...Redirecting...");
-      setTimeout(() => {
-        router.replace("/(tabs)");
-        setActionStatus(null);
-      }, 3000);
-      // if (pin.firstPin) {
-      //   setActionStatus("done");
-      //   showNotification("Accepted...Redirecting...");
-      //   setTimeout(() => {
-      //     router.replace("/(tabs)");
-      //     setActionStatus(null);
-      //   }, 5000);
-      // } else {
-      //   setActionStatus("failed");
-      //   showNotification("Pin does not match");
-      //   setRetryFunction(retryPin);
-      //   setSecondStage(false);
-      // }
+      monitorInput();
     }
   }, [pin.firstPin]);
   const renderItem = ({ item }: { item: number }) => (
@@ -207,7 +223,7 @@ export default function PinSetup() {
     <ThemedView style={{ flex: 1 }}>
       <Animated.View style={[{ transform: [{ translateY: position3 }] }]}>
         <ThemedText style={{ letterSpacing: 5, fontSize: 30, lineHeight: 50 }}>
-          {"Enter your safe pin"}
+          {"Enter your safe pin boo"}
         </ThemedText>
       </Animated.View>
       <Animated.View style={[{ transform: [{ translateY: position1 }] }]}>

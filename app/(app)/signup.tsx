@@ -11,7 +11,7 @@ import Animated, {
   withRepeat,
   withSequence,
 } from "react-native-reanimated";
-import { AuthPost } from "@/apis/Post/AuthPost";
+import { AuthPost } from "@/apis/Authentication/AuthPost";
 import kallumStore from "@/hooks/kallumstore";
 import { router } from "expo-router";
 import { useNotification } from "@/context/InAppNotificationContext";
@@ -38,10 +38,10 @@ export default function Signup() {
   const handleChange = (name: string, value: any) => {
     setInputValue((prevValues) => ({
       ...prevValues,
-      [name]: value,
+      [name]: value.trim(),
     }));
   };
-  const body = { fullName, email, phoneNumber, passWord };
+  const body = { fullName: fullName.trim(), email, phoneNumber, passWord };
   const validateInputs = () => {
     if (!fullName || !email || !phoneNumber || !passWord || !confirmPassword) {
       setActionStatus("failed");

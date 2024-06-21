@@ -19,6 +19,8 @@ import { useNotification } from "@/context/InAppNotificationContext";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
+import { AuthPatch } from "@/apis/Authentication/AuthPatch";
+import { useSession } from "@/context/AuthContext";
 const { width, height } = Dimensions.get("window");
 
 const CircleComponent = (props: {
@@ -94,7 +96,7 @@ export default function TransactionPinSetup() {
   });
   const { showNotification } = useNotification();
   const [secondStage, setSecondStage] = useState(Boolean);
-
+  const { session } = useSession();
   const deleteSingle = () => {
     setPin((prevPin) => ({
       ...prevPin,
@@ -120,6 +122,22 @@ export default function TransactionPinSetup() {
       }));
     }
   };
+  const body = {
+    securePin: "",
+    transactionPin: pin.firstPin,
+  };
+  const setSecurePin = async () => {
+    try {
+      await AuthPatch("kallumlock", session, body);
+      setActionStatus("done");
+      showNotification("Pin has been set");
+
+      router.push("/(tabs)/");
+      setActionStatus(null);
+    } catch (error) {
+      throw error;
+    }
+  };
 
   const handleInput = (value: string | number | { name: string }) => {
     if (value == "12") {
@@ -129,16 +147,26 @@ export default function TransactionPinSetup() {
     } else {
       const stringValue = value.toString(); // Convert value to string if it's a number
       if (pin.firstPin.length <= 5) {
-        setPin((prevPin) => ({
-          ...prevPin,
-          firstPin: prevPin.firstPin + stringValue,
-        }));
-      } else {
-        if (pin.secondPin.length <= 5) {
+        if (pin.firstPin.length == 0 && stringValue == "0") {
+          showNotification("Do not start pin with 0");
+          setActionStatus("failed");
+        } else {
           setPin((prevPin) => ({
             ...prevPin,
-            secondPin: prevPin.secondPin + stringValue,
+            firstPin: prevPin.firstPin + stringValue,
           }));
+        }
+      } else {
+        if (pin.secondPin.length <= 5) {
+          if (pin.secondPin.length == 0 && stringValue == "0") {
+            showNotification("Do not start pin with 0");
+            setActionStatus("failed");
+          } else {
+            setPin((prevPin) => ({
+              ...prevPin,
+              secondPin: prevPin.secondPin + stringValue,
+            }));
+          }
         }
       }
     }
@@ -184,26 +212,23 @@ export default function TransactionPinSetup() {
       return index <= 9 ? index : index - 1; // Counting from 1 to 9
     }
   );
-
+  const monitorInput = async () => {
+    if (pin.firstPin === pin.secondPin) {
+      await setSecurePin();
+    } else {
+      setActionStatus("failed");
+      showNotification("Pin does not match");
+      setRetryFunction(retryPin);
+      setSecondStage(false);
+    }
+  };
   useEffect(() => {
     if (pin.firstPin.length > 3) {
       setSecondStage(true);
     }
     if (pin.secondPin.length > 3) {
       setActionStatus("loading");
-      if (pin.firstPin === pin.secondPin) {
-        setActionStatus("done");
-        showNotification("Pin has been set");
-        setTimeout(() => {
-          router.replace("/(tabs)");
-          setActionStatus(null);
-        }, 5000);
-      } else {
-        setActionStatus("failed");
-        showNotification("Pin does not match");
-        setRetryFunction(retryPin);
-        setSecondStage(false);
-      }
+      monitorInput();
     }
   }, [pin.firstPin, pin.secondPin]);
   const renderItem = ({ item }: { item: number }) => (
@@ -217,7 +242,7 @@ export default function TransactionPinSetup() {
       <Animated.View style={[{ transform: [{ translateY: position3 }] }]}>
         <ThemedText style={{ letterSpacing: 5, fontSize: 30, lineHeight: 50 }}>
           {secondStage
-            ? "Re-enter pin to confirm"
+            ? "Re-enter transaction pin to confirm"
             : "Enter your transaction pin"}
         </ThemedText>
       </Animated.View>
