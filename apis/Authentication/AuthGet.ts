@@ -1,5 +1,5 @@
 // Define the base URL for your API
-const BASE_URL = "https://4baf-105-113-33-121.ngrok-free.app"; // Replace with your API URL
+const BASE_URL = "https://8104-105-120-130-2.ngrok-free.app"; // Replace with your API URL
 
 // Define the function to send a POST request with a bearer token using fetch
 export const AuthGet = async (

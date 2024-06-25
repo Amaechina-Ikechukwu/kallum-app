@@ -127,9 +127,8 @@ export default function PinSetup() {
         setIsSecured(true);
         setActionStatus("done");
         showNotification("Accepted...Redirecting...");
-        router.push("/(tabs)");
-
         setActionStatus(null);
+        router.push("/(tabs)");
       } else {
         setActionStatus("failed");
         showNotification("Pin is incorrect");
@@ -142,6 +141,7 @@ export default function PinSetup() {
   };
   const monitorInput = async () => {
     try {
+      setActionStatus("loading");
       await setSecurePin();
     } catch (error) {
       setActionStatus("failed");

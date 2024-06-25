@@ -68,7 +68,7 @@ export default function Index() {
       setRetryFunction(setUpAccount);
       setActionStatus("failed");
       showNotification(
-        "Could not set up account at the moment. \n Please ensure your password contains a number and a character"
+        "Could not set up account at the moment. \nPlease ensure your password contains a number and a character"
       );
     }
   };
@@ -132,7 +132,7 @@ export default function Index() {
           </Animated.View>
         </ThemedView>
       </ThemedView>
-      <ThemedView style={{ flexDirection: "row", gap: 10 }}>
+      <ThemedView style={{ gap: 10 }}>
         <ThemedText>Yet to have an account on Kallum?</ThemedText>
         <Link href={"/(app)/signup"}>
           <ThemedText style={{ color: accent }}>Click to create</ThemedText>

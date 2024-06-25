@@ -55,6 +55,8 @@ const KallumInput: React.FC<KallumInputProps> = ({
   const labelStyle = {
     position: "absolute" as "absolute",
     left: 0,
+
+    letterSpacing: 3,
     top: animatedIsFocused.interpolate({
       inputRange: [0, 1],
       outputRange: [18, -10],
@@ -82,6 +84,7 @@ const KallumInput: React.FC<KallumInputProps> = ({
   };
 
   const viewStyle = {
+    letterSpacing: 3,
     borderWidth: animatedIsFocused.interpolate({
       inputRange: [0, 1],
       outputRange: [1, 2],
@@ -117,7 +120,7 @@ const KallumInput: React.FC<KallumInputProps> = ({
           style={[
             defaultStyles.input,
             props.style,
-            { color: Colors[theme].text, padding: 20 },
+            { color: Colors[theme].text, padding: 20, letterSpacing: 3 },
           ]}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -135,6 +138,8 @@ const defaultStyles = StyleSheet.create({
   input: {
     height: 60,
     fontSize: 16,
+
+    letterSpacing: 3,
   },
 });
 

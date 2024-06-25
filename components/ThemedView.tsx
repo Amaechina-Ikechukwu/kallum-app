@@ -21,7 +21,6 @@ export function ThemedView({
   return (
     <View
       style={[
-        style,
         {
           backgroundColor,
           width: "100%",
@@ -29,6 +28,7 @@ export function ThemedView({
           alignItems: "center",
           justifyContent: "center",
         },
+        style,
       ]}
       {...otherProps}
     />

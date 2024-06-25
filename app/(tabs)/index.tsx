@@ -7,23 +7,40 @@ import { ThemedView } from "@/components/ThemedView";
 import { KallumButton } from "@/constants/KallumButton";
 import KallumInput from "@/constants/KallumInput";
 import { useEffect, useState } from "react";
+import kallumStore from "@/hooks/kallumstore";
+import { useShallow } from "zustand/react/shallow";
+import { BankGet } from "@/apis/Bank/BankGet";
+import { useSession } from "@/context/AuthContext";
+import BankDetails from "@/components/UserInterfacees/HomePPage/BankDetails";
 
 export default function HomeScreen() {
-  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { session } = useSession();
+  const [setAccountDetails, setBalanceDetails] = kallumStore(
+    useShallow((state) => [state.setAccountDetails, state.setBalanceDetails])
+  );
+  const getBankDetails = async () => {
+    const result = await BankGet("accountdetails", session);
+    const balance = await BankGet("balance", session);
 
+    setAccountDetails(result);
+    setBalanceDetails(balance);
+    setIsLoading(true);
+  };
+  useEffect(() => {
+    getBankDetails();
+  }, []);
+  if (!isLoading) {
+    return (
+      <ThemedView style={{ flex: 1, height: "100%" }}>
+        <HelloWave />
+      </ThemedView>
+    );
+  }
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <KallumButton text="Hello there" />
-      <KallumInput label="Enter bank" value={input} setValue={setInput} />
-    </ParallaxScrollView>
+    <ThemedView>
+      <BankDetails />
+    </ThemedView>
   );
 }
 

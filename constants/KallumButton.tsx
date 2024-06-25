@@ -76,7 +76,12 @@ export const KallumButton = (props: ButtonProps) => {
       >
         <Text
           style={[
-            { color: Colors.light.background, fontWeight: 600, fontSize: 20 },
+            {
+              color: Colors.light.background,
+              fontWeight: 600,
+              fontSize: 20,
+              letterSpacing: 3,
+            },
             props.textStyles,
           ]}
         >

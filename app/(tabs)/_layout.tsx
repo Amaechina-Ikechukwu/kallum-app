@@ -2,7 +2,7 @@ import { Redirect, Tabs, router } from "expo-router";
 import React, { useEffect, useState } from "react";
 
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
-import { Colors } from "@/constants/Colors";
+import { Colors, accent } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSession } from "@/context/AuthContext";
 import kallumStore from "@/hooks/kallumstore";
@@ -25,7 +25,6 @@ export default function TabLayout() {
   const { session, isLoading } = useSession();
   const checkKallumLockStatus = async () => {
     const result = await AuthGet("kallumlock", session);
-
     setKallumLockStatus(result);
   };
   useEffect(() => {
@@ -35,7 +34,7 @@ export default function TabLayout() {
     }
   }, [session]);
   useEffect(() => {
-    if (session) {
+    if (session && kallumLockStatus) {
       if (
         kallumLockStatus?.securePin == null ||
         kallumLockStatus?.securePin.length == 0
@@ -50,22 +49,26 @@ export default function TabLayout() {
         router.push("/(app)/transactionpinsetup");
         return;
       }
+    }
+  }, [kallumLockStatus]);
+  useEffect(() => {
+    if (isSecured !== null && session !== null) {
       if (!isSecured) {
         router.push("/(app)/pinsecure");
         return;
       }
     }
-  }, [kallumLockStatus]);
+  }, [isSecured, session]);
   const [appState, setAppState] = useState(AppState.currentState);
   const [message, setMessage] = useState("App is active");
   useEffect(() => {
     const handleAppStateChange = (nextAppState: any) => {
       if (appState.match(/inactive|background/) && nextAppState === "active") {
-        if (!isSecured) {
+        if (isSecured == false) {
           router.push("/(app)/pinsecure");
         }
       } else if (nextAppState.match(/inactive|background/)) {
-        if (session) {
+        if (session !== null) {
           if (kallumLockStatus?.securePin !== null) {
             setIsSecured(false);
           }
@@ -91,7 +94,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: accent,
         headerShown: false,
       }}
     >
@@ -101,7 +104,7 @@ export default function TabLayout() {
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "home" : "home-outline"}
+              name={focused ? "cash" : "cash-outline"}
               color={color}
             />
           ),

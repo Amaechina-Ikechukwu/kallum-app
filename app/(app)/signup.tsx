@@ -38,7 +38,7 @@ export default function Signup() {
   const handleChange = (name: string, value: any) => {
     setInputValue((prevValues) => ({
       ...prevValues,
-      [name]: value.trim(),
+      [name]: value,
     }));
   };
   const body = { fullName: fullName.trim(), email, phoneNumber, passWord };
